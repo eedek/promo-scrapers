@@ -35,6 +35,6 @@ def run_morele():
 
 if __name__ == "__main__":
 
-    run_media_expert()
-    run_xkom()
+    # run_media_expert()
+    # run_xkom()
     run_morele()
