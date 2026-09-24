@@ -1,12 +1,25 @@
 services:
-  python:
-    image: python:3.12
-    container_name: python3-12
-    working_dir: /src
-    volumes:
-      - .:/src
-    # command: sh -c "pip install -r requirements.txt"
-    command: sh -c "apt-get update && pip install -r src/requirements.txt && playwright install --with-deps chromium && tail -f /dev/null"
+  # python:
+  #   image: python:3.12
+  #   container_name: python3-12
+  #   working_dir: /src
+  #   volumes:
+  #     - .:/src
+  #   # command: sh -c "pip install -r requirements.txt"
+  #   command: sh -c "apt-get update && pip install -r src/requirements.txt && playwright install --with-deps chromium && tail -f /dev/null"
+
+
+  celery_worker:
+    build:
+      dockerfile: Dockerfile
+    container_name: celery_worker
+    command: celery -A src.src.celery_config.celery_app worker --loglevel=info
+
+  db_writer:
+    build:
+      dockerfile: Dockerfile
+    container_name: db_writer
+    command: python src/src/db/write.py
 
   kafka-service:
     image: apache/kafka:3.7.0
