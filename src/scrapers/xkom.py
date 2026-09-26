@@ -7,6 +7,7 @@ from kafka_config.create_kafka_producer import create_kafka_producer
 from utils.split_list import split_list
 
 
+
 def run_xkom():
     codes = scrape_main_xkom()
     batches = split_list(codes, 8)

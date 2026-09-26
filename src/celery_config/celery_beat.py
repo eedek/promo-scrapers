@@ -7,7 +7,10 @@ from scrapers.xkom import run_xkom
 
 @app.on_after_configure.connect
 def run_app(sender: Celery, **kwargs):
-    sender.add_periodic_task(10800, run_media_expert.s(), name='run every 3 hours')
-    sender.add_periodic_task(10800, run_morele.s(), name='run every 3 hours')
-    sender.add_periodic_task(10800, run_xkom.s(), name='run every 3 hours')
+    # sender.add_periodic_task(10800, run_media_expert.s(), name='run every 3 hours')
+    # sender.add_periodic_task(10800, run_morele.s(), name='run every 3 hours')
+    # sender.add_periodic_task(10800, run_xkom.s(), name='run every 3 hours')
+
+
+    sender.add_periodic_task(300, run_media_expert.s(), name='run every 3 hours')
 
