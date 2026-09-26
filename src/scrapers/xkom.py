@@ -4,6 +4,17 @@ import csv
 from datetime import datetime
 from celery_config.celery_app import app
 from kafka_config.create_kafka_producer import create_kafka_producer
+from utils.split_list import split_list
+
+
+def run_xkom():
+    codes = scrape_main_xkom()
+    batches = split_list(codes, 8)
+
+    for idx, batch in enumerate(batches):
+        if batch:
+            scrape_xkom.delay(batch, idx)
+
 
 
 @app.task

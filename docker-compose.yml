@@ -8,11 +8,21 @@ services:
   #   # command: sh -c "pip install -r requirements.txt"
   #   command: sh -c "apt-get update && pip install -r src/requirements.txt && playwright install --with-deps chromium && tail -f /dev/null"
 
+  celery_beat:
+    build:
+      dockerfile: Dockerfile
+    container_name: celery_beat
+    command: celery -A src.src.celery_config.celery_app beat
+    depends_on:
+      redis:
+        condition: service_started
 
   celery_worker:
     build:
       dockerfile: Dockerfile
-    container_name: celery_worker
+    deploy:
+      mode: replicated
+      replicas: 8
     command: celery -A src.src.celery_config.celery_app worker --loglevel=info
     depends_on:
       redis:

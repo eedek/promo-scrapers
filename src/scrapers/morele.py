@@ -3,6 +3,19 @@ from datetime import datetime
 from playwright.sync_api import sync_playwright
 from celery_config.celery_app import app
 from kafka_config.create_kafka_producer import create_kafka_producer
+from utils.split_list import split_list
+
+def run_morele():
+    print("Zbieranie danych startowych: Morele...")
+    dane_produktow = scrape_main_morele()
+    print(f"Znaleziono {len(dane_produktow)} produktów w Morele.")
+    
+    batches = split_list(dane_produktow, 8)
+
+    for idx, batch in enumerate(batches):
+        if batch:
+            scrape_morele.delay(batch, idx)
+
 
 
 # --- 1. FUNKCJA ZBIERAJĄCA (Kierownik, odpalany z main.py) ---
