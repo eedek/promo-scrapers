@@ -9,7 +9,7 @@ from kafka_config.create_kafka_producer import create_kafka_producer
 # def scrape_media_expert():
 # def run(playwright):
 
-
+@app.task
 def run_media_expert():
     codes = scrape_main_media_expert()
     batches = split_list(codes, 8)

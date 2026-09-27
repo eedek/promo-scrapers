@@ -5,6 +5,7 @@ from celery_config.celery_app import app
 from kafka_config.create_kafka_producer import create_kafka_producer
 from utils.split_list import split_list
 
+@app.task
 def run_morele():
     print("Zbieranie danych startowych: Morele...")
     dane_produktow = scrape_main_morele()
