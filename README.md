@@ -1,112 +1,48 @@
 # E-commerce Data Engineering Platform
 
-A distributed data engineering platform for automatically collecting, processing, and storing product, price, and promotion data from online stores.
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![Celery](https://img.shields.io/badge/Celery-37814A?style=flat-square&logo=celery&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
+![Kafka](https://img.shields.io/badge/Apache_Kafka-231F20?style=flat-square&logo=apache-kafka&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&logo=kubernetes&logoColor=white)
 
-The project started as a simple idea — **collect promotions from online stores** — but instead of building a simple scraper, it is intentionally being developed as a more complex distributed system to explore modern data engineering technologies, scalable architectures, asynchronous processing, and container orchestration.
+> A distributed data engineering platform for automatically collecting, processing, and storing product, price, and promotion data from multiple online stores.
 
-## Overview
+The project started as a simple idea — collect promotions from online stores — but is intentionally being developed as a robust distributed system to explore scalable data engineering architectures, asynchronous processing, and container orchestration. The long-term goal is to evolve the project into a comprehensive **distributed e-commerce price intelligence platform**.
 
-The platform is designed to:
+## Architecture & Data Flow
 
-- Collect product and pricing data from multiple online stores
-- Process data concurrently using multiple workers
-- Schedule scraping jobs automatically
-- Buffer and asynchronously process collected data
-- Reduce database overhead through batch processing
-- Prevent duplicate product data
-- Store historical price information
-- Recover services after failures
-- Scale horizontally across multiple machines
-- Provide a foundation for further data analysis and visualization
+The platform operates as an asynchronous pipeline where components are loosely coupled and scale independently within a **k3s Kubernetes cluster**.
 
-The long-term goal is to evolve the project from a promotion scraper into a **distributed e-commerce price monitoring and analytics platform**.
+* **Task Scheduling & Distribution:** **Celery Beat** schedules periodic scraping jobs. These tasks are distributed across multiple **Celery workers** using **Redis** as a low-latency message broker.
+* **Data Collection:** Independent, containerized Python scrapers fetch and normalize product data from various targets. 
+* **Buffering & Streaming:** To prevent database bottlenecks and handle bursts of traffic, workers do not write directly to the database. Extracted data is published to **Apache Kafka**, acting as a highly available buffer and streaming layer.
+* **Persistence & Processing:** Dedicated consumer applications read batched messages from Kafka and securely upsert the records into **PostgreSQL**. This step handles entity deduplication and preserves historical price changes efficiently.
+* **Orchestration:** The entire ecosystem runs inside Kubernetes, providing automatic service recovery, horizontal scaling for workers, and seamless multi-node deployment.
 
-## Tech Stack
+## Extensibility (Adding New Stores)
 
-<p align="center">
-  <img src="https://skillicons.dev/icons?i=python,docker,redis,postgres,kafka,kubernetes,grafana,prometheus" />
-</p>
+The system is designed to keep individual data sources independent from the core pipeline. Adding a new store requires only three simple steps:
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Celery-37814A?style=for-the-badge&logo=celery&logoColor=white" />
-  <img src="https://img.shields.io/badge/Apache%20Spark-E25A1C?style=for-the-badge&logo=apachespark&logoColor=white" />
-</p>
-
-| Technology | Purpose |
-|---|---|
-| **Python** | Scraping & data processing |
-| **Celery** | Distributed task processing |
-| **Redis** | Task broker |
-| **Apache Kafka** | Data streaming & buffering |
-| **PostgreSQL** | Data storage |
-| **Docker** | Containerization |
-| **k3s / Kubernetes** | Orchestration & scaling |
-| **Apache Spark / PySpark** | Large-scale data processing |
-| **Prometheus** | Monitoring |
-| **Grafana** | Metrics & visualization |
-
-## Data Collection
-
-Each supported online store has its own scraper responsible for collecting and normalizing product data into a common format.
-
-Adding a new store should require only:
-
-1. Implementing a scraper
-2. Returning data in the expected format
-3. Creating and scheduling the appropriate task
-
-This keeps individual data sources independent from the rest of the system.
-
-## Celery & Redis
-
-Scraping tasks are distributed across multiple **Celery workers**, allowing data to be collected concurrently from multiple stores.
-
-**Redis** acts as the task broker, while **Celery Beat** handles periodic job scheduling.
-
-## Apache Kafka
-
-Collected data is published to **Kafka** instead of being written directly to the database.
-
-Kafka acts as a buffer between data collection and persistence, allowing data to be processed and inserted into the database in batches.
-
-## PostgreSQL
-
-**PostgreSQL** is used as the primary database for storing products, stores, offers, prices, and historical data.
-
-The system is designed to avoid duplicate product records while preserving price history.
-
-## k3s / Kubernetes
-
-The platform runs as a collection of containerized services inside a **k3s Kubernetes cluster**.
-
-Kubernetes provides:
-
-- Automatic service recovery
-- Container orchestration
-- Horizontal scaling
-- Multi-node deployment
-- Easier management of distributed components
-
-Additional worker replicas or cluster nodes can be added as the workload grows.
-The architecture allows the number of workers to be increased independently of the rest of the system and can be distributed across multiple k3s nodes.
+1. Implementing a Python scraper for the specific site.
+2. Returning the scraped data in the standardized system schema.
+3. Registering and scheduling the new Celery task.
 
 ## Future Development
 
-Possible future features include:
+The architecture sets a strong foundation for future data analytics and platform scaling. Planned features are categorized below:
 
-- Support for additional online stores
-- Complete price history
-- Real-time price monitoring
-- Cross-store price comparison
-- Product matching and entity resolution
-- Price trend analysis
-- Anomaly detection
-- Data visualization dashboard
-- Prometheus & Grafana monitoring
-- Automatic worker scaling
-- Apache Spark / PySpark processing
-- Large-scale historical data analysis
-- Price change notifications
-- Advanced data quality validation
+**Data Analytics & Processing**
+* Integration with **Apache Spark / PySpark** for large-scale historical data analysis.
+* Cross-store price comparison and product matching (entity resolution).
+* Price trend analysis, anomaly detection, and advanced data quality validation.
 
-The long-term vision is to transform the project from a simple promotion collector into a distributed e-commerce price intelligence platform.
+**Platform Features**
+* Real-time price monitoring and alerts/notifications for price drops.
+* Support for a wider variety of e-commerce platforms.
+* Complete and accessible price history for individual products.
+
+**Infrastructure & Observability**
+* **Prometheus & Grafana** integration for monitoring pipeline health, metrics, and visualization dashboards.
+* Automatic, metrics-driven horizontal worker scaling based on queue size.
