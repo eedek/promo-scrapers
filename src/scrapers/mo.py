@@ -8,21 +8,21 @@ from config import mo_url, mo_url_2, me_shop
 
 
 @app.task
-def run_morele():
+def run_mo():
     print("Zbieranie danych startowych: Morele...")
-    dane_produktow = scrape_main_morele()
+    dane_produktow = scrape_main_mo()
     print(f"Znaleziono {len(dane_produktow)} produktów w Morele.")
     
     batches = split_list(dane_produktow, 8)
 
     for idx, batch in enumerate(batches):
         if batch:
-            scrape_morele.delay(batch, idx)
+            scrape_mo.delay(batch, idx)
 
 
 
 # --- 1. FUNKCJA ZBIERAJĄCA (Kierownik, odpalany z main.py) ---
-def scrape_main_morele():
+def scrape_main_mo():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, slow_mo=0)
         page = browser.new_page(
@@ -73,7 +73,7 @@ def scrape_main_morele():
 
 # --- 2. ZADANIE CELERY (Worker, odpala się w tle) ---
 @app.task
-def scrape_morele(batch, id):
+def scrape_mo(batch, id):
     with sync_playwright() as p:
         prod = create_kafka_producer()
         browser = p.chromium.launch(headless=True, slow_mo=0)

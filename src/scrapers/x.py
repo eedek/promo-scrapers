@@ -8,18 +8,18 @@ from utils.split_list import split_list
 from config import x_shop, x_url_2, x_url
 
 @app.task
-def run_xkom():
-    codes = scrape_main_xkom()
+def run_x():
+    codes = scrape_main_x()
     batches = split_list(codes, 8)
 
     for idx, batch in enumerate(batches):
         if batch:
-            scrape_xkom.delay(batch, idx)
+            scrape_x.delay(batch, idx)
 
 
 
 @app.task
-def scrape_xkom(batch, id):
+def scrape_x(batch, id):
 
     with sync_playwright() as p:
         prod = create_kafka_producer()
@@ -93,7 +93,7 @@ def scrape_xkom(batch, id):
 
         browser.close()
 
-def scrape_main_xkom():
+def scrape_main_x():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, slow_mo=0)
@@ -111,7 +111,7 @@ def scrape_main_xkom():
         page_wrapers = page.locator('[class*="parts__InfoSection"] a')
         for i in page_wrapers.all():
             if "#Opinie" not in i.get_attribute("href"):
-                item_link = f"x-kom.pl{i.get_attribute("href")}"
+                item_link = f"{x_shop}{i.get_attribute("href")}"
                 links.append(item_link)
 
         pages = int(element[element.index(" ")+1:])
@@ -129,7 +129,7 @@ def scrape_main_xkom():
             page_wrapers = page.locator('[class*="parts__InfoSection"] a')
             for i in page_wrapers.all():
                 if "#Opinie" not in i.get_attribute("href"):
-                    item_link = f"x-kom.pl{i.get_attribute("href")}"
+                    item_link = f"{x_shop}{i.get_attribute("href")}"
                     links.append(item_link)
 
         print(links)
