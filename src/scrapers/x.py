@@ -5,21 +5,21 @@ from datetime import datetime
 from celery_config.celery_app import app
 from kafka_config.create_kafka_producer import create_kafka_producer
 from utils.split_list import split_list
-
+from config import x_shop, x_url_2, x_url
 
 @app.task
-def run_xkom():
-    codes = scrape_main_xkom()
+def run_x():
+    codes = scrape_main_x()
     batches = split_list(codes, 8)
 
     for idx, batch in enumerate(batches):
         if batch:
-            scrape_xkom.delay(batch, idx)
+            scrape_x.delay(batch, idx)
 
 
 
 @app.task
-def scrape_xkom(batch, id):
+def scrape_x(batch, id):
 
     with sync_playwright() as p:
         prod = create_kafka_producer()
@@ -50,7 +50,7 @@ def scrape_xkom(batch, id):
                     category2 = "-"
                     
                 aktualna_data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                sklep = "xkom"
+                sklep = x_shop
 
                 if "Najniższa cena z ostatnich 30 dni" in price1:
                     price_main = float(price[price.index(" ")+1:-3].replace(",", ".").replace(" ", ""))
@@ -93,7 +93,7 @@ def scrape_xkom(batch, id):
 
         browser.close()
 
-def scrape_main_xkom():
+def scrape_main_x():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, slow_mo=0)
@@ -103,7 +103,7 @@ def scrape_main_xkom():
             viewport={"width": 1920, "height": 1080}
         )
         
-        page.goto("https://www.x-kom.pl/trendy/promocje")
+        page.goto(x_url)
         element = page.locator('[class*="parts__PagesTotal"]').first.inner_text()
 
         links = []
@@ -111,14 +111,13 @@ def scrape_main_xkom():
         page_wrapers = page.locator('[class*="parts__InfoSection"] a')
         for i in page_wrapers.all():
             if "#Opinie" not in i.get_attribute("href"):
-                item_link = f"x-kom.pl{i.get_attribute("href")}"
+                item_link = f"{x_shop}{i.get_attribute("href")}"
                 links.append(item_link)
 
         pages = int(element[element.index(" ")+1:])
         for i in range(2, pages+1):
         # for i in range(2, 10):
-        
-            link = f"https://www.x-kom.pl/trendy/promocje?page={i}"
+            link  = f"{x_url_2}={i}"
             print(f"Wchodzę na: {link}")
             
             # BRAKUJĄCA LINIJKA - przechodzimy na nową stronę!
@@ -130,7 +129,7 @@ def scrape_main_xkom():
             page_wrapers = page.locator('[class*="parts__InfoSection"] a')
             for i in page_wrapers.all():
                 if "#Opinie" not in i.get_attribute("href"):
-                    item_link = f"x-kom.pl{i.get_attribute("href")}"
+                    item_link = f"{x_shop}{i.get_attribute("href")}"
                     links.append(item_link)
 
         print(links)
