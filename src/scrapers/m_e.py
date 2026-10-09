@@ -6,7 +6,7 @@ from celery_config.celery_app import app
 from utils.split_list import split_list
 from kafka_config.create_kafka_producer import create_kafka_producer
 from scrapers.config import m_e_url
-from config import m_e_url, api_m_e, m_e_shop
+from scrapers.config import m_e_url, api_m_e, m_e_shop
 
 @app.task
 def run_m_e():

@@ -2,7 +2,7 @@ from kafka import KafkaConsumer
 from datetime import datetime
 import json
 from sqlalchemy import create_engine
-from sqlachemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import declarative_base, sessionmaker
 from models import Promotion, Base
 connection = "postgresql://admin:admin@postgres:5432/moja_baza"
@@ -63,7 +63,7 @@ for message in consumer:
     if message_count == 100:
         with Session() as session:
             stmt = insert(Promotion).values(buffer)
-            stmt = stmt.on_conflict_do_update(index_elements = ["id"])
+            stmt = stmt.on_conflict_do_nothing(index_elements = ["id"])
             
             session.execute(stmt)
             session.commit()

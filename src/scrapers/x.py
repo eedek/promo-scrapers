@@ -5,7 +5,7 @@ from datetime import datetime
 from celery_config.celery_app import app
 from kafka_config.create_kafka_producer import create_kafka_producer
 from utils.split_list import split_list
-from config import x_shop, x_url_2, x_url
+from scrapers.config import x_shop, x_url_2, x_url
 
 @app.task
 def run_x():
