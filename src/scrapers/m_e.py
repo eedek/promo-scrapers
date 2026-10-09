@@ -5,21 +5,20 @@ from datetime import datetime
 from celery_config.celery_app import app
 from utils.split_list import split_list
 from kafka_config.create_kafka_producer import create_kafka_producer
-
-# def scrape_media_expert():
-# def run(playwright):
+from scrapers.config import m_e_url
+from config import m_e_url, api_m_e, m_e_shop
 
 @app.task
-def run_media_expert():
-    codes = scrape_main_media_expert()
+def run_m_e():
+    codes = scrape_main_m_e()
     batches = split_list(codes, 8)
 
     for idx, batch in enumerate(batches):
         if batch:
-            scrape_media_expert.delay(batch, idx)
+            scrape_m_e.delay(batch, idx)
 
 
-def scrape_main_media_expert():
+def scrape_main_m_e():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, slow_mo=500)
             
@@ -29,7 +28,7 @@ def scrape_main_media_expert():
         )
             
             # page.goto("https://www.mediaexpert.pl/lp,wielka-wyprzedaz")
-        page.goto("https://www.mediaexpert.pl/lp,okazje")
+        page.goto(m_e_url)
 
             
         page.wait_for_timeout(2000)
@@ -57,7 +56,7 @@ def scrape_main_media_expert():
 
 
 @app.task
-def scrape_media_expert(batch, id):
+def scrape_m_e(batch, id):
     with sync_playwright() as p:
         prod = create_kafka_producer()
         browser = p.chromium.launch(headless=True, slow_mo=500)
@@ -73,7 +72,8 @@ def scrape_media_expert(batch, id):
 
             #5. Pętla uderzająca do API dla każdego pobranego kodu BEZ użycia page.goto()
         for field in batch:
-            url = f"https://sgimg.mediaexpert.pl/json/me/{field}.json"
+            # api = "https://sgimg.mediaexpert.pl/json/me"
+            url = f"{api_m_e}/{field}.json"
                 
             try:
                     # Używamy page.evaluate() aby wykonać pobieranie "w tle" z poziomu otwartej strony.
@@ -111,7 +111,7 @@ def scrape_media_expert(batch, id):
 
                         # Dokładny czas do środka tabeli i nazwa sklepu
                     aktualna_data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    sklep = "Media Expert"
+                    sklep = m_e_shop
 
                     # wiersz_danych = [
                     #         aktualna_data, sklep,

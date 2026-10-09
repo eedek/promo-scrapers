@@ -4,23 +4,25 @@ from playwright.sync_api import sync_playwright
 from celery_config.celery_app import app
 from kafka_config.create_kafka_producer import create_kafka_producer
 from utils.split_list import split_list
+from config import mo_url, mo_url_2, me_shop
+
 
 @app.task
-def run_morele():
+def run_mo():
     print("Zbieranie danych startowych: Morele...")
-    dane_produktow = scrape_main_morele()
+    dane_produktow = scrape_main_mo()
     print(f"Znaleziono {len(dane_produktow)} produktów w Morele.")
     
     batches = split_list(dane_produktow, 8)
 
     for idx, batch in enumerate(batches):
         if batch:
-            scrape_morele.delay(batch, idx)
+            scrape_mo.delay(batch, idx)
 
 
 
 # --- 1. FUNKCJA ZBIERAJĄCA (Kierownik, odpalany z main.py) ---
-def scrape_main_morele():
+def scrape_main_mo():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, slow_mo=0)
         page = browser.new_page(
@@ -28,7 +30,9 @@ def scrape_main_morele():
             viewport={"width": 1920, "height": 1080}
         )
         
-        page.goto("https://lp.morele.net/wyprzedaz-ostatnich-sztuk/")
+        # page.goto("https://lp.morele.net/wyprzedaz-ostatnich-sztuk/")
+        page.goto(mo_url)
+
         page.wait_for_timeout(2000)
         
         items = page.locator(".owl-item")
@@ -43,7 +47,7 @@ def scrape_main_morele():
             
             # Zabezpieczenie przed względnymi URL-ami
             if item_link and not item_link.startswith("http"):
-                item_link = "https://www.morele.net" + item_link
+                item_link = mo_url_2 + item_link
                 
             name = item.get_attribute("data-product-name")
             promo_price = item.get_attribute("data-product-price")
@@ -69,7 +73,7 @@ def scrape_main_morele():
 
 # --- 2. ZADANIE CELERY (Worker, odpala się w tle) ---
 @app.task
-def scrape_morele(batch, id):
+def scrape_mo(batch, id):
     with sync_playwright() as p:
         prod = create_kafka_producer()
         browser = p.chromium.launch(headless=True, slow_mo=0)
@@ -107,7 +111,7 @@ def scrape_morele(batch, id):
                     # Sklejamy dane przysłane w słowniku z danymi pobranymi w workerze
                     wiersz_danych = [
                         aktualna_data,
-                        "morele.net",
+                        me_shop,
                         p_data["nazwa"],
                         brand,
                         p_data["kategoria"],
