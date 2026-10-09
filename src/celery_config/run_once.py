@@ -1,7 +1,7 @@
-from scrapers.media_expert import run_media_expert
+from scrapers.m_e import run_m_e
 from scrapers.morele import run_morele
 from scrapers.xkom import run_xkom
 
-run_media_expert.delay()
+run_m_e.delay()
 # run_morele()
 # run_xkom()
