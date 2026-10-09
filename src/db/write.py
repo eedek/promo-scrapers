@@ -2,6 +2,7 @@ from kafka import KafkaConsumer
 from datetime import datetime
 import json
 from sqlalchemy import create_engine
+from sqlachemy.dialects.postgresql import insert
 from sqlalchemy.orm import declarative_base, sessionmaker
 from models import Promotion, Base
 connection = "postgresql://admin:admin@postgres:5432/moja_baza"
@@ -31,26 +32,41 @@ for message in consumer:
     #     print("value error")
     #     continue
 
-    new_insert = Promotion(
-        date=datetime.now().date(),
-        shop=data[1],
-        product_name=data[2],
-        producer=data[3],
-        category=data[4],
-        category_second=data[5],
-        product_url=data[6],
-        price_promo=data[7],
-        price_old=data[8],
-        price_omnibus=data[9],
-        promo_code=data[10]
-    )
+    # new_insert = Promotion(
+    #     date=datetime.now().date(),
+    #     shop=data[1],
+    #     product_name=data[2],
+    #     producer=data[3],
+    #     category=data[4],
+    #     category_second=data[5],
+    #     product_url=data[6],
+    #     price_promo=data[7],
+    #     price_old=data[8],
+    #     price_omnibus=data[9],
+    #     promo_code=data[10]
+    # )
+    buffer.append({
+        "date": datetime.now().date(),
+        "shop": data[1],
+        "product_name": data[2],
+        "producer": data[3],
+        "category": data[4],
+        "category_second": data[5],
+        "product_url": data[6],
+        "price_promo":data[7],
+        "price_old":data[8],
+        "price_omnibus":data[9],
+        "promo_code":data[10]
+    }) 
 
-    buffer.append(new_insert)
-
+    
     if message_count == 100:
         with Session() as session:
-            session.add_all(buffer)
+            stmt = insert(Promotion).values(buffer)
+            stmt = stmt.on_conflict_do_update(index_elements = ["id"])
+            
+            session.execute(stmt)
             session.commit()
-            buffer.clear()
+            buffer = []
             message_count = 0
 
