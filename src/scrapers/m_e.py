@@ -6,12 +6,13 @@ from celery_config.celery_app import app
 from utils.split_list import split_list
 from kafka_config.create_kafka_producer import create_kafka_producer
 from scrapers.config import m_e_url
-from config import m_e_url, api_m_e, m_e_shop
+from scrapers.config import m_e_url, api_m_e, m_e_shop
+from app_config.config import number_of_workers
 
 @app.task
 def run_m_e():
     codes = scrape_main_m_e()
-    batches = split_list(codes, 8)
+    batches = split_list(codes, number_of_workers)
 
     for idx, batch in enumerate(batches):
         if batch:

@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 from celery_config.celery_app import app
 from kafka_config.create_kafka_producer import create_kafka_producer
 from utils.split_list import split_list
-from config import mo_url, mo_url_2, me_shop
+from scrapers.config import mo_url, mo_url_2, mo_shop
 
 
 @app.task
@@ -111,7 +111,7 @@ def scrape_mo(batch, id):
                     # Sklejamy dane przysłane w słowniku z danymi pobranymi w workerze
                     wiersz_danych = [
                         aktualna_data,
-                        me_shop,
+                        mo_shop,
                         p_data["nazwa"],
                         brand,
                         p_data["kategoria"],
