@@ -5,12 +5,12 @@ from datetime import datetime
 from celery_config.celery_app import app
 from kafka_config.create_kafka_producer import create_kafka_producer
 from utils.split_list import split_list
-from scrapers.config import x_shop, x_url_2, x_url
+from app_config.config import settings
 
 @app.task
 def run_x():
     codes = scrape_main_x()
-    batches = split_list(codes, 8)
+    batches = split_list(codes, settings.number_of_workers)
 
     for idx, batch in enumerate(batches):
         if batch:
@@ -50,7 +50,7 @@ def scrape_x(batch, id):
                     category2 = "-"
                     
                 aktualna_data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                sklep = x_shop
+                sklep = settings.x_shop
 
                 if "Najniższa cena z ostatnich 30 dni" in price1:
                     price_main = float(price[price.index(" ")+1:-3].replace(",", ".").replace(" ", ""))
@@ -103,7 +103,7 @@ def scrape_main_x():
             viewport={"width": 1920, "height": 1080}
         )
         
-        page.goto(x_url)
+        page.goto(settings.x_url)
         element = page.locator('[class*="parts__PagesTotal"]').first.inner_text()
 
         links = []
@@ -111,13 +111,13 @@ def scrape_main_x():
         page_wrapers = page.locator('[class*="parts__InfoSection"] a')
         for i in page_wrapers.all():
             if "#Opinie" not in i.get_attribute("href"):
-                item_link = f"{x_shop}{i.get_attribute("href")}"
+                item_link = f"{settings.x_shop}{i.get_attribute("href")}"
                 links.append(item_link)
 
         pages = int(element[element.index(" ")+1:])
         for i in range(2, pages+1):
         # for i in range(2, 10):
-            link  = f"{x_url_2}={i}"
+            link  = f"{settings.x_url_2}={i}"
             print(f"Wchodzę na: {link}")
             
             # BRAKUJĄCA LINIJKA - przechodzimy na nową stronę!
@@ -129,7 +129,7 @@ def scrape_main_x():
             page_wrapers = page.locator('[class*="parts__InfoSection"] a')
             for i in page_wrapers.all():
                 if "#Opinie" not in i.get_attribute("href"):
-                    item_link = f"{x_shop}{i.get_attribute("href")}"
+                    item_link = f"{settings.x_shop}{i.get_attribute("href")}"
                     links.append(item_link)
 
         print(links)

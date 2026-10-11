@@ -5,14 +5,12 @@ from datetime import datetime
 from celery_config.celery_app import app
 from utils.split_list import split_list
 from kafka_config.create_kafka_producer import create_kafka_producer
-from scrapers.config import m_e_url
-from scrapers.config import m_e_url, api_m_e, m_e_shop
-from app_config.config import number_of_workers
+from app_config.config import settings
 
 @app.task
 def run_m_e():
     codes = scrape_main_m_e()
-    batches = split_list(codes, number_of_workers)
+    batches = split_list(codes, settings.number_of_workers)
 
     for idx, batch in enumerate(batches):
         if batch:
@@ -29,7 +27,7 @@ def scrape_main_m_e():
         )
             
             # page.goto("https://www.mediaexpert.pl/lp,wielka-wyprzedaz")
-        page.goto(m_e_url)
+        page.goto(settings.m_e_url)
 
             
         page.wait_for_timeout(2000)
@@ -74,7 +72,7 @@ def scrape_m_e(batch, id):
             #5. Pętla uderzająca do API dla każdego pobranego kodu BEZ użycia page.goto()
         for field in batch:
             # api = "https://sgimg.mediaexpert.pl/json/me"
-            url = f"{api_m_e}/{field}.json"
+            url = f"{settings.api_m_e}/{field}.json"
                 
             try:
                     # Używamy page.evaluate() aby wykonać pobieranie "w tle" z poziomu otwartej strony.
@@ -112,7 +110,7 @@ def scrape_m_e(batch, id):
 
                         # Dokładny czas do środka tabeli i nazwa sklepu
                     aktualna_data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    sklep = m_e_shop
+                    sklep = settings.m_e_shop
 
                     # wiersz_danych = [
                     #         aktualna_data, sklep,
