@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date
+from sqlalchemy import Column, Integer, String, Float, Date, UniqueConstraint
 from database import Base
 
 class Promotion(Base):
@@ -16,3 +16,7 @@ class Promotion(Base):
     price_old = Column(Float)
     price_omnibus = Column(Float)
     promo_code = Column(String)
+
+    __table_args__ = (
+        UniqueConstraint("date", "shop", "product_name", "price_omnibus", name = "unique_row"),
+    )

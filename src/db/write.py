@@ -62,10 +62,9 @@ for message in consumer:
     
     if message_count == 100:
         with Session() as session:
-            stmt = insert(Promotion).values(buffer)
-            stmt = stmt.on_conflict_do_nothing(index_elements = ["id"])
+            stmt = insert(Promotion).on_conflict_do_nothing(constraint = "unique_row")
             
-            session.execute(stmt)
+            session.execute(stmt, buffer)
             session.commit()
             buffer = []
             message_count = 0
