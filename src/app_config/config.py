@@ -28,4 +28,4 @@ class Settings(BaseSettings):
     db_admin: str
     db_name: str
 
-Settings = Settings()
+settings = Settings()

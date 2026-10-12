@@ -9,6 +9,8 @@ services:
   #   command: sh -c "apt-get update && pip install -r src/requirements.txt && playwright install --with-deps chromium && tail -f /dev/null"
 
   run_once:
+    env_file:
+      - .env
     build:
       dockerfile: Dockerfile
     container_name: run_once
@@ -19,6 +21,8 @@ services:
 
   
   flower:
+    env_file:
+      - .env
     build:
       dockerfile: Dockerfile
     container_name: flower
@@ -34,6 +38,8 @@ services:
 
 
   celery_beat:
+    env_file:
+      - .env
     build:
       dockerfile: Dockerfile
     container_name: celery_beat
@@ -43,11 +49,13 @@ services:
         condition: service_started
 
   celery_worker:
+    env_file:
+      - .env
     build:
       dockerfile: Dockerfile
     deploy:
       mode: replicated
-      replicas: 8
+      replicas: ${number_of_workers}
     command: celery -A celery_config.celery_app worker --loglevel=info
     depends_on:
       redis:
@@ -57,6 +65,8 @@ services:
 
 
   db_writer:
+    env_file:
+      - .env
     build:
       dockerfile: Dockerfile
     container_name: db_writer
@@ -104,6 +114,7 @@ services:
     image: postgres:15
     container_name: postgres
     restart: always
+    
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
