@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     m_e_shop: str
     mo_shop: str
     x_shop: str
+    bd_shop: str
 
     m_e_url: str
     api_m_e: str
@@ -19,6 +20,8 @@ class Settings(BaseSettings):
     x_url: str
     x_url_2: str 
 
+    bd_api: str
+    bd_url: str
 
     number_of_workers: int
     scraping_dealy: int 
