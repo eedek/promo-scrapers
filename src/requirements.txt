@@ -39,3 +39,9 @@ vine==5.1.0
 wcwidth==0.8.3
 flower
 pydantic-settings
+requests
+beautifulsoup4
+lxml
+python-dotenv
+pydantic-settings
+pydantic
