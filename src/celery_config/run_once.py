@@ -5,5 +5,5 @@ from scrapers.bd import run_bd
 
 run_m_e.delay()
 run_bd.delay()
-run_mo.delay()
 run_x.delay()
+run_mo.delay()

@@ -13,14 +13,15 @@ settings.bd_shop
 settings.bd_url
 settings.bd_api
 
-klasa = "d-inline-block reference"
+klasa = "product-miniature__reference-value"
 naglowki = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
 @app.task
 def run_bd():
     codes = scrape_main_bd()
+    print(f"[Botland] Zebrano {len(codes)} kodów produktów z paginacji.")
     batches = split_list(codes, settings.number_of_workers)
 
     for idx, batch in enumerate(batches):
@@ -122,6 +123,8 @@ def scrape_bd(batch, idx):
 
                 # url znajduje się bezpośrednio w hit
                 product_url = hit.get("url", "-")
+                if product_url.startswith("/"):
+                    product_url = f"https://{settings.bd_shop}{product_url}"
 
                 # Pozostałe cechy znajdują się w attributes
                 attr = hit.get("attributes", {})
@@ -131,34 +134,55 @@ def scrape_bd(batch, idx):
                 kat_ostatnia = kategorie[-1] if len(kategorie) > 0 else "Brak"
 
                 title = attr.get("title", "Brak tytułu")
-                brand = attr.get("brand", "Brak marki")
-# Pobranie surowych wartości
-                raw_price_old = attr.get("price_pln_old")
-                raw_last_price = attr.get("cache_last_price")
-                raw_omnibus = attr.get("omnibus_price")
+                raw_brand = attr.get("brand")
+                if isinstance(raw_brand, list) and len(raw_brand) > 0:
+                    brand_name = raw_brand[0]
+                elif isinstance(raw_brand, str) and raw_brand:
+                    brand_name = raw_brand
+                else:
+                    brand_name = "Brak marki"
+
+                # Pobranie surowych wartości (API zwraca teraz cenę w polu 'price' lub 'price_amount')
+                raw_price_old = attr.get("price_pln_old") or attr.get("price_old")
+                raw_last_price = attr.get("cache_last_price") or attr.get("price") or attr.get("price_amount")
+                raw_omnibus = attr.get("omnibus_price") or raw_price_old or raw_last_price
 
                 # Konwersja na float
                 price_pln_old = parsuj_cene(raw_price_old)
                 cache_last_price = parsuj_cene(raw_last_price)
                 omnibus_price = parsuj_cene(raw_omnibus)
 
-                # Formatowanie do printa/pliku (np. z formatowaniem do 2 miejsc po przecinku):
+                if not cache_last_price:
+                    continue
 
                 linijka = (
-                    f"[{brand}] {title} | "
+                    f"[{brand_name}] {title} | "
                     f"Cena: {cache_last_price} zł (Stara: {price_pln_old} zł, Omnibus: {omnibus_price} zł) | "
                     f"Kategorie: [{kat_pierwsza} -> {kat_ostatnia}] | "
                     f"URL: {product_url}"
                 )
+                print(linijka)
 
-                wiersz_danych = [aktualna_data, settings.bd_shop, title, brand[0], kat_pierwsza, kat_ostatnia, url, cache_last_price, price_pln_old,  omnibus_price, "-"]          
-                
-                # Wypisanie na ekran i natychmiastowy zapis do pliku
+                wiersz_danych = [
+                    aktualna_data,
+                    settings.bd_shop,
+                    title,
+                    brand_name,
+                    kat_pierwsza,
+                    kat_ostatnia,
+                    product_url,
+                    cache_last_price,
+                    price_pln_old,
+                    omnibus_price,
+                    "-"
+                ]
+
                 prod.send('test-topic-3', {'message': wiersz_danych})
-                prod.flush()
 
-            # Stała pauza między indeksami (0.6s - 1.2s), aby nie wywoływać 429
-            time.sleep(random.uniform(0.6, 1.2))
+            # Krótka pauza między indeksami, aby nie wywoływać 429
+            time.sleep(random.uniform(0.2, 0.5))
+
+        prod.flush()
 
 
 

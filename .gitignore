@@ -1,2 +1,5 @@
 db_data/
 .env
+__pycache__/
+PORADNIK_SCRAPOWANIA.md
+celery_config/__pycache__/

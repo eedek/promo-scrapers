@@ -45,3 +45,6 @@ lxml
 python-dotenv
 pydantic-settings
 pydantic
+selectolax 
+httpx
+

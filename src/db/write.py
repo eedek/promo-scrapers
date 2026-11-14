@@ -19,53 +19,52 @@ consumer = KafkaConsumer(
     value_deserializer=lambda m: json.loads(m.decode('utf-8'))
 )
 buffer = []
-message_count = 0
-for message in consumer:
-    data = message.value['message']
-    message_count += 1
-    
-    # try:
-    #     float(data[7])
-    #     float(data[8])
-    #     float(data[9])
-    # except:
-    #     print("value error")
-    #     continue
+BATCH_SIZE = 100
 
-    # new_insert = Promotion(
-    #     date=datetime.now().date(),
-    #     shop=data[1],
-    #     product_name=data[2],
-    #     producer=data[3],
-    #     category=data[4],
-    #     category_second=data[5],
-    #     product_url=data[6],
-    #     price_promo=data[7],
-    #     price_old=data[8],
-    #     price_omnibus=data[9],
-    #     promo_code=data[10]
-    # )
-    buffer.append({
-        "date": datetime.now().date(),
-        "shop": data[1],
-        "product_name": data[2],
-        "producer": data[3],
-        "category": data[4],
-        "category_second": data[5],
-        "product_url": data[6],
-        "price_promo":data[7],
-        "price_old":data[8],
-        "price_omnibus":data[9],
-        "promo_code":data[10]
-    }) 
 
-    
-    if message_count == 100:
-        with Session() as session:
-            stmt = insert(Promotion).on_conflict_do_nothing(constraint = "unique_row")
-            
-            session.execute(stmt, buffer)
-            session.commit()
+def flush_buffer(buf):
+    if not buf:
+        return
+    with Session() as session:
+        stmt = insert(Promotion).on_conflict_do_nothing(constraint="unique_row")
+        session.execute(stmt, buf)
+        session.commit()
+    print(f"[DB] Zapisano paczkę {len(buf)} rekordów do bazy.")
+
+
+while True:
+    records = consumer.poll(timeout_ms=2000)
+
+    if not records:
+        # Jeśli przez 2 sekundy nie przyszły nowe wiadomości, zapisujemy końcówkę bufora (< 100 rekordów)
+        if buffer:
+            flush_buffer(buffer)
             buffer = []
-            message_count = 0
+        continue
+
+    for topic_partition, messages in records.items():
+        for message in messages:
+            data = message.value['message']
+
+            # Pomijamy puste/uszkodzone rekordy (np. stare wiadomości z Kafki z "-" i 0.0)
+            if not data[2] or data[2] == "-" or data[7] in (0, 0.0, "0", "0.0", "-"):
+                continue
+
+            buffer.append({
+                "date": datetime.now().date(),
+                "shop": data[1],
+                "product_name": data[2],
+                "producer": data[3],
+                "category": data[4],
+                "category_second": data[5],
+                "product_url": data[6],
+                "price_promo": data[7],
+                "price_old": data[8],
+                "price_omnibus": data[9],
+                "promo_code": data[10]
+            })
+
+            if len(buffer) >= BATCH_SIZE:
+                flush_buffer(buffer)
+                buffer = []
 
