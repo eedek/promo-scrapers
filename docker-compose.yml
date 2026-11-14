@@ -70,10 +70,13 @@ services:
     build:
       dockerfile: Dockerfile
     container_name: db_writer
-    command: python db/write.py
+    restart: unless-stopped
+    command: python -u db/write.py
     depends_on:
       db: 
         condition: service_healthy
+      kafka-service:
+        condition: service_started
 
 
   kafka-service:
