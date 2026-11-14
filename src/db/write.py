@@ -1,5 +1,4 @@
 from kafka import KafkaConsumer
-from kafka.errors import NoBrokersAvailable
 from datetime import datetime
 import json
 import re
@@ -29,8 +28,8 @@ while consumer is None:
             value_deserializer=lambda m: json.loads(m.decode('utf-8'))
         )
         print("[DB Writer] Połączono z Kafką!")
-    except NoBrokersAvailable:
-        print("[DB Writer] Kafka jeszcze nie jest gotowa, ponawiam próbę za 3 sekundy...")
+    except Exception as e:
+        print(f"[DB Writer] Kafka jeszcze nie jest gotowa ({e}), ponawiam próbę za 3 sekundy...")
         time.sleep(3)
 
 
